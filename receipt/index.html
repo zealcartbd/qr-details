@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ZealCart — Receipt Generator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
       :root {
@@ -20,16 +20,20 @@
       * {
         box-sizing: border-box;
       }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
       body {
         margin: 0;
         font-family: "Helvetica Neue", Arial, sans-serif;
         background: #f2f4f2;
         color: var(--ink);
         padding: 32px 16px 80px;
+        overflow-x: hidden;
       }
       h1 {
         text-align: center;
-        font-size: 20px;
+        font-size: clamp(16px, 4vw, 20px);
         letter-spacing: 0.06em;
         margin: 0 0 4px;
       }
@@ -41,6 +45,7 @@
         color: var(--grey);
         font-size: 13px;
         margin: 0 0 28px;
+        padding: 0 8px;
       }
       .layout {
         display: flex;
@@ -51,15 +56,16 @@
         flex-wrap: wrap;
         justify-content: center;
       }
-
+ 
       /* ---------- FORM PANEL ---------- */
       .panel {
         background: var(--paper);
         border: 1px solid var(--line);
         border-radius: 10px;
         padding: 22px 24px 26px;
-        width: 360px;
-        flex: 0 0 360px;
+        width: 100%;
+        max-width: 360px;
+        flex: 1 1 320px;
       }
       .panel h2 {
         font-size: 13px;
@@ -87,7 +93,7 @@
         padding: 8px 10px;
         border: 1px solid var(--line);
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 16px; /* 16px prevents iOS Safari auto-zoom on focus */
         font-family: inherit;
         resize: vertical;
       }
@@ -103,6 +109,7 @@
       }
       .row2 .field {
         flex: 1;
+        min-width: 0; /* lets inputs shrink instead of overflowing */
       }
       .field-file {
         display: flex;
@@ -128,10 +135,10 @@
       }
       .btn {
         width: 100%;
-        padding: 11px;
+        padding: 12px;
         border: none;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 700;
         letter-spacing: 0.03em;
         cursor: pointer;
@@ -141,6 +148,10 @@
       }
       .btn:active {
         transform: scale(0.98);
+      }
+      .btn:disabled {
+        opacity: 0.6;
+        cursor: default;
       }
       .btn-primary {
         background: var(--green);
@@ -163,17 +174,18 @@
         margin-top: 6px;
         line-height: 1.4;
       }
-
+ 
       /* ---------- RECEIPT PANEL ---------- */
       .receipt-stage {
-        flex: 0 0 auto;
+        flex: 0 1 auto;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 14px;
+        max-width: 100%;
       }
       #receipt {
-        width: 3in;
+        width: min(3in, 92vw);
         min-height: 5in;
         background: var(--paper);
         color: var(--ink);
@@ -218,19 +230,6 @@
         display: none;
         border: 1px solid var(--ink);
       }
-      /* #logoPlaceholder {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: var(--green);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--font-brand);
-        font-weight: bold;
-        font-size: 12px;
-      } */
       .r-brand {
         text-align: center;
         font-family: var(--font-brand);
@@ -320,7 +319,7 @@
         gap: 8px;
         margin-top: 20px;
       }
-      #qrcode {
+      #z-qrcode {
         width: 56px;
         height: 56px;
         display: flex;
@@ -330,21 +329,122 @@
         padding: 2px;
         background: #fff;
       }
-      #qrcode img,
-      #qrcode canvas {
+      #z-qrcode img {
         width: 100% !important;
         height: 100% !important;
       }
       .r-footer-text {
         font-size: 15px;
         color: var(--grey);
-        line-height: 1;
+        line-height: 1.2;
         text-align: right;
       }
       .r-footer-text b {
         color: var(--ink);
       }
-
+ 
+      .preview-note {
+        font-size: 11px;
+        color: #888;
+        text-align: center;
+        padding: 0 8px;
+      }
+ 
+      /* ---------- PASSWORD GATE ---------- */
+      #passGate {
+        position: fixed;
+        inset: 0;
+        background: #10130f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+      }
+      #passCard {
+        background: var(--paper);
+        border-radius: 12px;
+        padding: 32px 28px;
+        width: 100%;
+        max-width: 320px;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      #passLogo {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        font-family: var(--font-brand);
+        font-weight: bold;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 14px;
+      }
+      #passCard h2 {
+        font-size: 16px;
+        margin: 0 0 6px;
+        color: var(--ink);
+      }
+      #passCard p {
+        font-size: 12.5px;
+        color: var(--grey);
+        margin: 0 0 16px;
+      }
+      #passInput {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font-size: 16px;
+        margin-bottom: 12px;
+        text-align: center;
+        letter-spacing: 0.08em;
+      }
+      #passInput:focus {
+        outline: none;
+        border-color: var(--green);
+        box-shadow: 0 0 0 2px var(--green-tint);
+      }
+      #passError {
+        display: none;
+        color: #c0392b;
+        font-size: 12px;
+        margin: 12px 0 0;
+      }
+      #passWorking {
+        display: none;
+        color: var(--grey);
+        font-size: 12px;
+        margin: 12px 0 0;
+      }
+ 
+      /* ---------- RESPONSIVE ADJUSTMENTS ---------- */
+      @media (max-width: 700px) {
+        .layout {
+          gap: 20px;
+        }
+        body {
+          padding: 20px 12px 60px;
+        }
+      }
+ 
+      @media (max-width: 480px) {
+        .row2 {
+          flex-direction: column;
+          gap: 0;
+        }
+        .panel {
+          padding: 18px 16px 20px;
+        }
+        .subtitle {
+          font-size: 12px;
+        }
+      }
+ 
       @media print {
         body * {
           visibility: hidden;
@@ -357,6 +457,7 @@
           position: fixed;
           top: 0;
           left: 0;
+          width: 3in;
           box-shadow: none;
         }
         @page {
@@ -367,222 +468,130 @@
     </style>
   </head>
   <body>
-    <h1>Zeal<span>Cart</span> Receipt Generator</h1>
-    <p class="subtitle">
-      Fill in the order details on the left — the 3in × 5in receipt updates on
-      the right.
-    </p>
-
-    <div class="layout">
-      <!-- FORM -->
-      <div class="panel">
-        <h2>Order Details</h2>
-
-        <div class="field">
-          <label for="orderId">Order ID</label>
-          <input
-            type="text"
-            id="orderId"
-            value="ZC-10234"
-            placeholder="e.g. ZC-10234"
-          />
-        </div>
-
-        <div class="field">
-          <label for="custName">Honorable Customer Name</label>
-          <input
-            type="text"
-            id="custName"
-            value="Rahim Uddin"
-            placeholder="Customer name"
-          />
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label for="contact">Contact No.</label>
-            <input type="text" id="contact" value="+880 1XXX-XXXXXX" />
-          </div>
-          <div class="field">
-            <label for="orderDate">Date</label>
-            <input type="text" id="orderDate" value="" />
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="address">Address</label>
-          <textarea id="address" rows="2" placeholder="Delivery address">
-House 12, Road 5, Dhanmondi, Dhaka</textarea
-          >
-        </div>
-
-        <hr class="divider" />
-        <h2>Product</h2>
-
-        <div class="field">
-          <label for="productName">Product Name</label>
-          <input
-            type="text"
-            id="productName"
-            value="Men's Chocolate Leather Wallet"
-          />
-        </div>
-
-        <div class="row2">
-          <div class="field">
-            <label for="currency">Currency</label>
-            <input type="text" id="currency" value="৳" />
-          </div>
-          <div class="field">
-            <label for="price">Price</label>
-            <input type="number" id="price" value="990" />
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="deliveryFee">Delivery Fee (0 = FREE)</label>
-          <input type="number" id="deliveryFee" value="0" />
-        </div>
-
-        <hr class="divider" />
-        <h2>Branding</h2>
-
-        <div class="field">
-          <label>Thank-you message</label>
-          <textarea id="thanksMsg" rows="2">
-Thank you for shopping with ZealCart! Your trust means the world to us.</textarea
-          >
-        </div>
-
-        <p class="hint">
-          Logo and QR code are fixed on the receipt (not editable inputs). See
-          the "STATIC_LOGO / STATIC_QR" comments in the code to swap in your
-          real logo file and tracking QR image.
-        </p>
-
-        <hr class="divider" />
-        <button class="btn btn-primary" id="generateBtn">
-          Generate Receipt
-        </button>
-        <button class="btn btn-secondary" id="printBtn">Print Receipt</button>
-        <button
-          class="btn btn-secondary"
-          id="downloadBtn"
-          style="margin-top: 10px"
-        >
-          Download as PNG
-        </button>
-        <p class="hint">
-          Print opens your browser's print dialog pre-sized to 3in × 5in —
-          choose "Save as PDF" there for a print-ready file.
-        </p>
-      </div>
-
-      <!-- RECEIPT -->
-      <div class="receipt-stage">
-        <div id="receipt">
-          <div class="r-logo-row">
-            <!-- STATIC_LOGO: swap this div for <img src="your-logo.png" style="width:30px;height:30px;border-radius:50%;object-fit:cover;"> to use a real logo file -->
-            <div id="logoPlaceholder">
-              <img src="Zealcartbd-logo.png" style="max-width: 70px" alt="" />
-            </div>
-          </div>
-          <div class="r-tagline">Official Order Receipt</div>
-
-          <hr class="r-dash" />
-
-          <div class="r-meta">
-            <div class="r-line">
-              <span class="r-label">Order ID</span
-              ><span class="r-value" id="rOrderId">ZC-10234</span>
-            </div>
-            <div class="r-line">
-              <span class="r-label">Date</span
-              ><span class="r-value" id="rDate">—</span>
-            </div>
-            <div class="r-line">
-              <span class="r-label">Customer</span
-              ><span class="r-value" id="rCustName">Rahim Uddin</span>
-            </div>
-            <div class="r-line">
-              <span class="r-label">Contact</span
-              ><span class="r-value" id="rContact">+880 1XXX-XXXXXX</span>
-            </div>
-            <div class="r-line">
-              <span class="r-label">Address</span
-              ><span class="r-value" id="rAddress">Dhanmondi, Dhaka</span>
-            </div>
-          </div>
-
-          <hr class="r-dash" />
-
-          <div class="r-section-title">Item</div>
-          <div class="r-item">
-            <span class="name" id="rProductName"
-              >Men's Chocolate Leather Wallet</span
-            >
-            <span class="price" id="rPrice">৳990</span>
-          </div>
-          <div class="r-item">
-            <span class="name">Delivery Fee</span>
-            <span class="price" id="rDelivery">FREE</span>
-          </div>
-
-          <div class="r-total">
-            <span>TOTAL</span>
-            <span id="rTotal">৳990</span>
-          </div>
-
-          <div class="r-thanks" id="rThanks">
-            Thank you for shopping with ZealCart!
-          </div>
-
-          <div class="r-bottom">
-            <div id="z-qrcode">
-              <img src="qr-code.png" style="width: 70px" alt="" />
-            </div>
-            <div class="r-footer-text">
-              <b>ZealCartBD</b><br />
-              zealcartbd.com<br />
-            </div>
-          </div>
-        </div>
-
-        <div style="font-size: 11px; color: #888">
-          Live preview — actual size 3in × 5in
-        </div>
+    <!-- PASSWORD GATE: nothing below is fetched or rendered until this succeeds.
+         The receipt tool markup is AES-256-GCM encrypted and only exists in
+         plaintext in this browser's memory after a correct decrypt. -->
+    <div id="passGate">
+      <div id="passCard">
+        <div id="passLogo">ZC</div>
+        <h2>ZealCart Receipt Tool</h2>
+        <p>Enter the access password to continue.</p>
+        <input
+          type="password"
+          id="passInput"
+          autocomplete="off"
+          placeholder="Password"
+        />
+        <button id="passSubmit" class="btn btn-primary">Unlock</button>
+        <p id="passError">Incorrect password. Please try again.</p>
+        <p id="passWorking">Checking…</p>
       </div>
     </div>
-
+ 
+    <div id="appRoot" style="display: none"></div>
+ 
     <script>
-      let qr = null;
-      const STATIC_QR_CONTENT = "https://zealcartbd.com"; // STATIC_QR: change this to your real tracking link — QR is fixed, not user input
-
+      /* ============================================================
+         ACCESS GATE
+         The form + receipt markup below was AES-256-GCM encrypted
+         (key derived from the password via PBKDF2-SHA256, 250,000
+         iterations) at build time. It is injected into #appRoot only
+         after a correct decrypt — until then it does not exist in
+         the page in any readable form.
+         ============================================================ */
+      const ENC_SALT_B64 = "2RvZNGEnLRlD7fqGmAI0Bw==";
+      const ENC_IV_B64 = "5EUq6PDfHvaw9t3w";
+      const ENC_ITERATIONS = 250000;
+      const ENC_DATA_B64 =
+        "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";
+ 
+      function b64ToBytes(b64) {
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+      }
+ 
+      async function deriveKey(password, saltBytes) {
+        const enc = new TextEncoder();
+        const baseKey = await crypto.subtle.importKey(
+          "raw",
+          enc.encode(password),
+          "PBKDF2",
+          false,
+          ["deriveKey"],
+        );
+        return crypto.subtle.deriveKey(
+          {
+            name: "PBKDF2",
+            salt: saltBytes,
+            iterations: ENC_ITERATIONS,
+            hash: "SHA-256",
+          },
+          baseKey,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["decrypt"],
+        );
+      }
+ 
+      async function tryUnlock(password) {
+        const passError = document.getElementById("passError");
+        const passWorking = document.getElementById("passWorking");
+        passError.style.display = "none";
+        passWorking.style.display = "block";
+ 
+        try {
+          const salt = b64ToBytes(ENC_SALT_B64);
+          const iv = b64ToBytes(ENC_IV_B64);
+          const data = b64ToBytes(ENC_DATA_B64);
+          const key = await deriveKey(password, salt);
+          const plainBuf = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            key,
+            data,
+          );
+          const html = new TextDecoder().decode(plainBuf);
+ 
+          const appRoot = document.getElementById("appRoot");
+          appRoot.innerHTML = html;
+          appRoot.style.display = "";
+          document.getElementById("passGate").remove();
+          initApp();
+        } catch (err) {
+          // AES-GCM authentication fails on any wrong password —
+          // this is the actual gate, not a string comparison.
+          passWorking.style.display = "none";
+          passError.style.display = "block";
+          document.getElementById("passInput").value = "";
+          document.getElementById("passInput").focus();
+        }
+      }
+ 
+      document.getElementById("passSubmit").addEventListener("click", () => {
+        const pw = document.getElementById("passInput").value;
+        if (pw) tryUnlock(pw);
+      });
+      document.getElementById("passInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("passSubmit").click();
+      });
+      document.getElementById("passInput").focus();
+ 
+      /* ============================================================
+         RECEIPT TOOL LOGIC
+         (runs only after initApp() is called post-unlock)
+         ============================================================ */
       function fmtMoney(cur, num) {
         const n = Number(num) || 0;
         return cur + n.toLocaleString("en-US");
       }
-
+ 
       function todayStr() {
         const d = new Date();
         const opts = { year: "numeric", month: "short", day: "2-digit" };
         return d.toLocaleDateString("en-US", opts);
       }
-      document.getElementById("orderDate").value = todayStr();
-
-      function renderQR() {
-        const box = document.getElementById("qrcode");
-        if (qr) return; // static — render once only
-        qr = new QRCode(box, {
-          text: STATIC_QR_CONTENT,
-          width: 90,
-          height: 90,
-          colorDark: "#000000",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-      }
-
+ 
       function generate() {
         const orderId = document.getElementById("orderId").value.trim() || "—";
         const custName =
@@ -601,7 +610,7 @@ Thank you for shopping with ZealCart! Your trust means the world to us.</textare
         const thanks =
           document.getElementById("thanksMsg").value.trim() ||
           "Thank you for your order!";
-
+ 
         document.getElementById("rOrderId").textContent = orderId;
         document.getElementById("rDate").textContent = date;
         document.getElementById("rCustName").textContent = custName;
@@ -619,71 +628,73 @@ Thank you for shopping with ZealCart! Your trust means the world to us.</textare
           Number(price || 0) + deliveryFee,
         );
         document.getElementById("rThanks").textContent = thanks;
-
-        renderQR();
       }
-
-      document
-        .getElementById("generateBtn")
-        .addEventListener("click", generate);
-
-      document
-        .getElementById("printBtn")
-        .addEventListener("click", function () {
-          window.print();
-        });
-
-      document
-        .getElementById("downloadBtn")
-        .addEventListener("click", async function () {
-          const btn = this;
-
-          if (typeof html2canvas === "undefined") {
-            alert(
-              'The image export library could not load (often caused by an ad-blocker/privacy extension blocking scripts from cdnjs.cloudflare.com, or no internet connection). Please allow cdnjs.cloudflare.com and try again, or use "Print Receipt" → Save as PDF instead.',
-            );
-            return;
-          }
-
-          const originalLabel = btn.textContent;
-          btn.textContent = "Preparing image…";
-          btn.disabled = true;
-
-          try {
-            // brief pause so the QR code and layout are fully painted before capture
-            await new Promise((resolve) => setTimeout(resolve, 200));
-
-            const canvas = await html2canvas(
-              document.getElementById("receipt"),
-              {
-                scale: 4,
-                backgroundColor: "#ffffff",
-                useCORS: true,
-                logging: false,
-              },
-            );
-
-            const orderId =
-              document.getElementById("orderId").value.trim() || "receipt";
-            const link = document.createElement("a");
-            link.download = "zealcart-receipt-" + orderId + ".png";
-            link.href = canvas.toDataURL("image/png");
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-          } catch (err) {
-            console.error("PNG export failed:", err);
-            alert(
-              'Sorry, the PNG export failed in this browser. Please use "Print Receipt" and choose "Save as PDF" (or "Save as Image") from the print dialog instead.',
-            );
-          } finally {
-            btn.textContent = originalLabel;
-            btn.disabled = false;
-          }
-        });
-
-      // initial render
-      generate();
+ 
+      function initApp() {
+        document.getElementById("orderDate").value = todayStr();
+ 
+        document
+          .getElementById("generateBtn")
+          .addEventListener("click", generate);
+ 
+        document
+          .getElementById("printBtn")
+          .addEventListener("click", function () {
+            window.print();
+          });
+ 
+        document
+          .getElementById("downloadBtn")
+          .addEventListener("click", async function () {
+            const btn = this;
+ 
+            if (typeof html2canvas === "undefined") {
+              alert(
+                'The image export library could not load (often caused by an ad-blocker/privacy extension blocking scripts from cdnjs.cloudflare.com, or no internet connection). Please allow cdnjs.cloudflare.com and try again, or use "Print Receipt" → Save as PDF instead.',
+              );
+              return;
+            }
+ 
+            const originalLabel = btn.textContent;
+            btn.textContent = "Preparing image…";
+            btn.disabled = true;
+ 
+            try {
+              // brief pause so images/layout are fully painted before capture
+              await new Promise((resolve) => setTimeout(resolve, 200));
+ 
+              const canvas = await html2canvas(
+                document.getElementById("receipt"),
+                {
+                  scale: 4,
+                  backgroundColor: "#ffffff",
+                  useCORS: true,
+                  logging: false,
+                },
+              );
+ 
+              const orderId =
+                document.getElementById("orderId").value.trim() || "receipt";
+              const link = document.createElement("a");
+              link.download = "zealcart-receipt-" + orderId + ".png";
+              link.href = canvas.toDataURL("image/png");
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+            } catch (err) {
+              console.error("PNG export failed:", err);
+              alert(
+                'Sorry, the PNG export failed in this browser. Please use "Print Receipt" and choose "Save as PDF" (or "Save as Image") from the print dialog instead.',
+              );
+            } finally {
+              btn.textContent = originalLabel;
+              btn.disabled = false;
+            }
+          });
+ 
+        // initial render
+        generate();
+      }
     </script>
   </body>
 </html>
