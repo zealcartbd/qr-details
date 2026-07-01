@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ZealCart — Receipt Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+      :root {
+        --green: #1f9821;
+        --green-dark: #166419;
+        --green-tint: #eaf6e9;
+        --ink: #000000;
+        --paper: #ffffff;
+        --grey: #6b6b6b;
+        --line: #c9c9c9;
+        --font-brand: "Georgia", "Times New Roman", serif;
+        --font-receipt: "Courier New", Courier, monospace;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        background: #f2f4f2;
+        color: var(--ink);
+        padding: 32px 16px 80px;
+      }
+      h1 {
+        text-align: center;
+        font-size: 20px;
+        letter-spacing: 0.06em;
+        margin: 0 0 4px;
+      }
+      h1 span {
+        color: var(--green);
+      }
+      .subtitle {
+        text-align: center;
+        color: var(--grey);
+        font-size: 13px;
+        margin: 0 0 28px;
+      }
+      .layout {
+        display: flex;
+        gap: 32px;
+        max-width: 980px;
+        margin: 0 auto;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      /* ---------- FORM PANEL ---------- */
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 22px 24px 26px;
+        width: 360px;
+        flex: 0 0 360px;
+      }
+      .panel h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--green-dark);
+        margin: 0 0 16px;
+        border-bottom: 2px solid var(--green);
+        padding-bottom: 8px;
+      }
+      .field {
+        margin-bottom: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: #333;
+      }
+      .field input[type="text"],
+      .field input[type="number"],
+      .field textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+      }
+      .field input:focus,
+      .field textarea:focus {
+        outline: none;
+        border-color: var(--green);
+        box-shadow: 0 0 0 2px var(--green-tint);
+      }
+      .row2 {
+        display: flex;
+        gap: 10px;
+      }
+      .row2 .field {
+        flex: 1;
+      }
+      .field-file {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+      }
+      .field-file input {
+        font-size: 12px;
+      }
+      .thumb {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        object-fit: cover;
+        display: none;
+      }
+      .divider {
+        border: none;
+        border-top: 1px dashed var(--line);
+        margin: 18px 0;
+      }
+      .btn {
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        transition:
+          transform 0.1s ease,
+          opacity 0.15s ease;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn-primary {
+        background: var(--green);
+        color: #fff;
+        margin-bottom: 10px;
+      }
+      .btn-primary:hover {
+        background: var(--green-dark);
+      }
+      .btn-secondary {
+        background: var(--ink);
+        color: #fff;
+      }
+      .btn-secondary:hover {
+        opacity: 0.85;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--grey);
+        margin-top: 6px;
+        line-height: 1.4;
+      }
+
+      /* ---------- RECEIPT PANEL ---------- */
+      .receipt-stage {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+      #receipt {
+        width: 3in;
+        min-height: 5in;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-receipt);
+        position: relative;
+        padding: 14px 14px 10px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: solid 1px #0000003b;
+      }
+      /* torn / scalloped bottom edge */
+      #receipt::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        height: 10px;
+        background: radial-gradient(
+            circle at 6px 0,
+            transparent 6px,
+            var(--paper) 6.5px
+          )
+          repeat-x;
+        background-size: 12px 12px;
+        background-position: 0 -1px;
+      }
+      .r-logo-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 2px;
+      }
+      #logoImg {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: none;
+        border: 1px solid var(--ink);
+      }
+      /* #logoPlaceholder {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-brand);
+        font-weight: bold;
+        font-size: 12px;
+      } */
+      .r-brand {
+        text-align: center;
+        font-family: var(--font-brand);
+        font-weight: bold;
+        font-size: 22px;
+        letter-spacing: 0.03em;
+        color: var(--green);
+        line-height: 1.1;
+      }
+      .r-tagline {
+        text-align: center;
+        font-size: 9.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--grey);
+        margin-top: 1px;
+      }
+      .r-dash {
+        border: none;
+        border-top: 1.4px dashed var(--ink);
+        margin: 8px 0;
+      }
+      .r-meta {
+        font-size: 11px;
+        line-height: 1.65;
+      }
+      .r-meta .r-line {
+        display: flex;
+      }
+      .r-meta .r-label {
+        width: 92px;
+        flex: 0 0 92px;
+        color: var(--grey);
+      }
+      .r-meta .r-value {
+        flex: 1;
+        font-weight: bold;
+        word-break: break-word;
+      }
+      .r-section-title {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        color: var(--green-dark);
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      .r-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11.5px;
+        padding: 3px 0;
+      }
+      .r-item .name {
+        flex: 1;
+        padding-right: 6px;
+      }
+      .r-item .price {
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      .r-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13.5px;
+        font-weight: bold;
+        background: var(--green-tint);
+        padding: 6px 8px;
+        border-radius: 4px;
+        margin-top: 4px;
+        color: var(--green-dark);
+      }
+      .r-thanks {
+        text-align: center;
+        font-family: var(--font-brand);
+        font-style: italic;
+        font-size: 12.5px;
+        color: var(--ink);
+        margin: 10px 0 6px;
+        line-height: 1.35;
+        margin-top: 25px;
+      }
+      .r-bottom {
+        margin-top: auto;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 20px;
+      }
+      #qrcode {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--ink);
+        padding: 2px;
+        background: #fff;
+      }
+      #qrcode img,
+      #qrcode canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+      .r-footer-text {
+        font-size: 15px;
+        color: var(--grey);
+        line-height: 1;
+        text-align: right;
+      }
+      .r-footer-text b {
+        color: var(--ink);
+      }
+
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #receipt,
+        #receipt * {
+          visibility: visible;
+        }
+        #receipt {
+          position: fixed;
+          top: 0;
+          left: 0;
+          box-shadow: none;
+        }
+        @page {
+          size: 3in 5in;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Zeal<span>Cart</span> Receipt Generator</h1>
+    <p class="subtitle">
+      Fill in the order details on the left — the 3in × 5in receipt updates on
+      the right.
+    </p>
+
+    <div class="layout">
+      <!-- FORM -->
+      <div class="panel">
+        <h2>Order Details</h2>
+
+        <div class="field">
+          <label for="orderId">Order ID</label>
+          <input
+            type="text"
+            id="orderId"
+            value="ZC-10234"
+            placeholder="e.g. ZC-10234"
+          />
+        </div>
+
+        <div class="field">
+          <label for="custName">Honorable Customer Name</label>
+          <input
+            type="text"
+            id="custName"
+            value="Rahim Uddin"
+            placeholder="Customer name"
+          />
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="contact">Contact No.</label>
+            <input type="text" id="contact" value="+880 1XXX-XXXXXX" />
+          </div>
+          <div class="field">
+            <label for="orderDate">Date</label>
+            <input type="text" id="orderDate" value="" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="address">Address</label>
+          <textarea id="address" rows="2" placeholder="Delivery address">
+House 12, Road 5, Dhanmondi, Dhaka</textarea
+          >
+        </div>
+
+        <hr class="divider" />
+        <h2>Product</h2>
+
+        <div class="field">
+          <label for="productName">Product Name</label>
+          <input
+            type="text"
+            id="productName"
+            value="Men's Chocolate Leather Wallet"
+          />
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="currency">Currency</label>
+            <input type="text" id="currency" value="৳" />
+          </div>
+          <div class="field">
+            <label for="price">Price</label>
+            <input type="number" id="price" value="990" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="deliveryFee">Delivery Fee (0 = FREE)</label>
+          <input type="number" id="deliveryFee" value="0" />
+        </div>
+
+        <hr class="divider" />
+        <h2>Branding</h2>
+
+        <div class="field">
+          <label>Thank-you message</label>
+          <textarea id="thanksMsg" rows="2">
+Thank you for shopping with ZealCart! Your trust means the world to us.</textarea
+          >
+        </div>
+
+        <p class="hint">
+          Logo and QR code are fixed on the receipt (not editable inputs). See
+          the "STATIC_LOGO / STATIC_QR" comments in the code to swap in your
+          real logo file and tracking QR image.
+        </p>
+
+        <hr class="divider" />
+        <button class="btn btn-primary" id="generateBtn">
+          Generate Receipt
+        </button>
+        <button class="btn btn-secondary" id="printBtn">Print Receipt</button>
+        <button
+          class="btn btn-secondary"
+          id="downloadBtn"
+          style="margin-top: 10px"
+        >
+          Download as PNG
+        </button>
+        <p class="hint">
+          Print opens your browser's print dialog pre-sized to 3in × 5in —
+          choose "Save as PDF" there for a print-ready file.
+        </p>
+      </div>
+
+      <!-- RECEIPT -->
+      <div class="receipt-stage">
+        <div id="receipt">
+          <div class="r-logo-row">
+            <!-- STATIC_LOGO: swap this div for <img src="your-logo.png" style="width:30px;height:30px;border-radius:50%;object-fit:cover;"> to use a real logo file -->
+            <div id="logoPlaceholder">
+              <img src="Zealcartbd-logo.png" style="max-width: 70px" alt="" />
+            </div>
+          </div>
+          <div class="r-tagline">Official Order Receipt</div>
+
+          <hr class="r-dash" />
+
+          <div class="r-meta">
+            <div class="r-line">
+              <span class="r-label">Order ID</span
+              ><span class="r-value" id="rOrderId">ZC-10234</span>
+            </div>
+            <div class="r-line">
+              <span class="r-label">Date</span
+              ><span class="r-value" id="rDate">—</span>
+            </div>
+            <div class="r-line">
+              <span class="r-label">Customer</span
+              ><span class="r-value" id="rCustName">Rahim Uddin</span>
+            </div>
+            <div class="r-line">
+              <span class="r-label">Contact</span
+              ><span class="r-value" id="rContact">+880 1XXX-XXXXXX</span>
+            </div>
+            <div class="r-line">
+              <span class="r-label">Address</span
+              ><span class="r-value" id="rAddress">Dhanmondi, Dhaka</span>
+            </div>
+          </div>
+
+          <hr class="r-dash" />
+
+          <div class="r-section-title">Item</div>
+          <div class="r-item">
+            <span class="name" id="rProductName"
+              >Men's Chocolate Leather Wallet</span
+            >
+            <span class="price" id="rPrice">৳990</span>
+          </div>
+          <div class="r-item">
+            <span class="name">Delivery Fee</span>
+            <span class="price" id="rDelivery">FREE</span>
+          </div>
+
+          <div class="r-total">
+            <span>TOTAL</span>
+            <span id="rTotal">৳990</span>
+          </div>
+
+          <div class="r-thanks" id="rThanks">
+            Thank you for shopping with ZealCart!
+          </div>
+
+          <div class="r-bottom">
+            <div id="z-qrcode">
+              <img src="qr-code.png" style="width: 70px" alt="" />
+            </div>
+            <div class="r-footer-text">
+              <b>ZealCartBD</b><br />
+              zealcartbd.com<br />
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size: 11px; color: #888">
+          Live preview — actual size 3in × 5in
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let qr = null;
+      const STATIC_QR_CONTENT = "https://zealcartbd.com"; // STATIC_QR: change this to your real tracking link — QR is fixed, not user input
+
+      function fmtMoney(cur, num) {
+        const n = Number(num) || 0;
+        return cur + n.toLocaleString("en-US");
+      }
+
+      function todayStr() {
+        const d = new Date();
+        const opts = { year: "numeric", month: "short", day: "2-digit" };
+        return d.toLocaleDateString("en-US", opts);
+      }
+      document.getElementById("orderDate").value = todayStr();
+
+      function renderQR() {
+        const box = document.getElementById("qrcode");
+        if (qr) return; // static — render once only
+        qr = new QRCode(box, {
+          text: STATIC_QR_CONTENT,
+          width: 90,
+          height: 90,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      }
+
+      function generate() {
+        const orderId = document.getElementById("orderId").value.trim() || "—";
+        const custName =
+          document.getElementById("custName").value.trim() || "—";
+        const contact = document.getElementById("contact").value.trim() || "—";
+        const date =
+          document.getElementById("orderDate").value.trim() || todayStr();
+        const address = document.getElementById("address").value.trim() || "—";
+        const productName =
+          document.getElementById("productName").value.trim() || "—";
+        const currency =
+          document.getElementById("currency").value.trim() || "৳";
+        const price = document.getElementById("price").value;
+        const deliveryFee =
+          Number(document.getElementById("deliveryFee").value) || 0;
+        const thanks =
+          document.getElementById("thanksMsg").value.trim() ||
+          "Thank you for your order!";
+
+        document.getElementById("rOrderId").textContent = orderId;
+        document.getElementById("rDate").textContent = date;
+        document.getElementById("rCustName").textContent = custName;
+        document.getElementById("rContact").textContent = contact;
+        document.getElementById("rAddress").textContent = address;
+        document.getElementById("rProductName").textContent = productName;
+        document.getElementById("rPrice").textContent = fmtMoney(
+          currency,
+          price,
+        );
+        document.getElementById("rDelivery").textContent =
+          deliveryFee > 0 ? fmtMoney(currency, deliveryFee) : "FREE";
+        document.getElementById("rTotal").textContent = fmtMoney(
+          currency,
+          Number(price || 0) + deliveryFee,
+        );
+        document.getElementById("rThanks").textContent = thanks;
+
+        renderQR();
+      }
+
+      document
+        .getElementById("generateBtn")
+        .addEventListener("click", generate);
+
+      document
+        .getElementById("printBtn")
+        .addEventListener("click", function () {
+          window.print();
+        });
+
+      document
+        .getElementById("downloadBtn")
+        .addEventListener("click", async function () {
+          const btn = this;
+
+          if (typeof html2canvas === "undefined") {
+            alert(
+              'The image export library could not load (often caused by an ad-blocker/privacy extension blocking scripts from cdnjs.cloudflare.com, or no internet connection). Please allow cdnjs.cloudflare.com and try again, or use "Print Receipt" → Save as PDF instead.',
+            );
+            return;
+          }
+
+          const originalLabel = btn.textContent;
+          btn.textContent = "Preparing image…";
+          btn.disabled = true;
+
+          try {
+            // brief pause so the QR code and layout are fully painted before capture
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            const canvas = await html2canvas(
+              document.getElementById("receipt"),
+              {
+                scale: 4,
+                backgroundColor: "#ffffff",
+                useCORS: true,
+                logging: false,
+              },
+            );
+
+            const orderId =
+              document.getElementById("orderId").value.trim() || "receipt";
+            const link = document.createElement("a");
+            link.download = "zealcart-receipt-" + orderId + ".png";
+            link.href = canvas.toDataURL("image/png");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+          } catch (err) {
+            console.error("PNG export failed:", err);
+            alert(
+              'Sorry, the PNG export failed in this browser. Please use "Print Receipt" and choose "Save as PDF" (or "Save as Image") from the print dialog instead.',
+            );
+          } finally {
+            btn.textContent = originalLabel;
+            btn.disabled = false;
+          }
+        });
+
+      // initial render
+      generate();
+    </script>
+  </body>
+</html>
