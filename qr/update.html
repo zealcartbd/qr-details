@@ -22,19 +22,20 @@
 <body>
 
     <p>Total Lands / QR Scans:</p>
-    <!-- The count will load dynamically right here -->
+    <!-- The count loads here -->
     <h1 id="counter-display">Loading...</h1>
 
     <script>
-        // Fetch the current count from the public API
-        fetch('https://api.countapi.xyz/get/zealcartbd/qr_counter')
+        // Fetch the active total count data from CounterAPI
+        fetch('https://api.counterapi.dev/v1/zealcartbd/qr_counter')
             .then(response => response.json())
             .then(data => {
-                // Display the actual total count inside the <h1> tags
+                // The API structure returns the number inside 'value'
                 document.getElementById('counter-display').innerText = data.value || 0;
             })
             .catch(error => {
                 document.getElementById('counter-display').innerText = "Error loading count";
+                console.error(error);
             });
     </script>
 </body>
