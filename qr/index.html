@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
     <style>
-        /* Hidden by default so regular users redirecting don't see anything flash */
+        /* Hidden by default so regular users don't see a flash */
         #stats-box {
             display: none; 
             font-family: Arial, sans-serif;
@@ -20,46 +20,35 @@
 </head>
 <body>
 
-    <!-- This hidden div will only show up if the special URL parameter is present -->
+    <!-- Hidden admin panel -->
     <div id="stats-box">
         <p>Total QR Code Scans / Lands:</p>
-        <h2 id="counter-display">Loading...</h2>
+        <h2 id="counter-display">0</h2>
     </div>
 
     <script>
-        // Check if the URL has a parameter (e.g., https://www.zealcartbd.com/qr?stats=true)
+        // Check if the URL has the special stats parameter
         const urlParams = new URLSearchParams(window.location.search);
         const viewStats = urlParams.has('stats');
 
+        // Get the current count from local storage (default to 0 if it doesn't exist yet)
+        let currentCount = parseInt(localStorage.getItem('qr_land_count')) || 0;
+
         if (viewStats) {
             // --- ADMIN MODE: SHOW STATS ---
-            // Unhide the hidden div container
             document.getElementById('stats-box').style.display = 'block';
             document.title = "Scan Analytics";
-
-            // Fetch the active total count data from CounterAPI
-            fetch('https://api.counterapi.dev/v1/zealcartbd/qr_counter')
-                .then(response => response.json())
-                .then(data => {
-                    // Rewrite the <h2> tag with the live count
-                    document.getElementById('counter-display').innerText = data.value || 0;
-                })
-                .catch(error => {
-                    document.getElementById('counter-display').innerText = "Error loading count";
-                });
-
+            
+            // Write the current total count right into the <h2> tag
+            document.getElementById('counter-display').innerText = currentCount;
         } else {
-            // --- USER MODE: COUNT AND REDIRECT ---
-            // 1. Log the hit by incrementing the cloud counter
-            fetch('https://api.counterapi.dev/v1/zealcartbd/qr_counter/up')
-                .then(() => {
-                    // 2. Redirect to Facebook instantly once logged
-                    window.location.href = "https://www.facebook.com/zealcartbd";
-                })
-                .catch(() => {
-                    // Fallback: Redirect even if the counter service drops out
-                    window.location.href = "https://www.facebook.com/zealcartbd";
-                });
+            // --- USER MODE: INCREMENT AND REDIRECT ---
+            // 1. Add 1 to the current landing count
+            currentCount += 1;
+            localStorage.setItem('qr_land_count', currentCount);
+
+            // 2. Redirect to Facebook instantly
+            window.location.href = "https://www.facebook.com/zealcartbd";
         }
     </script>
 </body>
