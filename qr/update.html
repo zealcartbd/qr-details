@@ -1,9 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Visitor Count</title>
+    <title>QR Code Scan Analytics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        h1 {
+            font-size: 4rem;
+            color: #1877f2; /* Facebook Blue */
+            margin: 10px 0;
+        }
+        p {
+            color: #666;
+            font-size: 1.2rem;
+        }
+    </style>
 </head>
 <body>
-    <h1>0</h1>
+
+    <p>Total Lands / QR Scans:</p>
+    <!-- The count will load dynamically right here -->
+    <h1 id="counter-display">Loading...</h1>
+
+    <script>
+        // Fetch the current count from the public API
+        fetch('https://api.countapi.xyz/get/zealcartbd/qr_counter')
+            .then(response => response.json())
+            .then(data => {
+                // Display the actual total count inside the <h1> tags
+                document.getElementById('counter-display').innerText = data.value || 0;
+            })
+            .catch(error => {
+                document.getElementById('counter-display').innerText = "Error loading count";
+            });
+    </script>
 </body>
 </html>
