@@ -1,27 +1,66 @@
-<!doctype html>
-<html>
-  <head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
+    <style>
+        /* Hidden by default so regular users redirecting don't see anything flash */
+        #stats-box {
+            display: none; 
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 50px;
+        }
+        h2 {
+            font-size: 3rem;
+            color: #1877f2; /* Facebook Blue */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- This hidden div will only show up if the special URL parameter is present -->
+    <div id="stats-box">
+        <p>Total QR Code Scans / Lands:</p>
+        <h2 id="counter-display">Loading...</h2>
+    </div>
+
     <script>
-      // 1. Log the hit by incrementing a free counter under your custom group name
-      fetch('https://api.counterapi.dev/v1/zealcartbd/qr_counter/up')
-        .then(() => {
-            // 2. Once recorded, bounce instantly to Facebook
-            window.location.href = "https://www.facebook.com/zealcartbd";
-        })
-        .catch(() => {
-            // Fallback: If the tracking service has an issue, still send them to Facebook regardless
-            window.location.href = "https://www.facebook.com/zealcartbd";
-        });
+        // Check if the URL has a parameter (e.g., https://www.zealcartbd.com/qr?stats=true)
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewStats = urlParams.has('stats');
+
+        if (viewStats) {
+            // --- ADMIN MODE: SHOW STATS ---
+            // Unhide the hidden div container
+            document.getElementById('stats-box').style.display = 'block';
+            document.title = "Scan Analytics";
+
+            // Fetch the active total count data from CounterAPI
+            fetch('https://api.counterapi.dev/v1/zealcartbd/qr_counter')
+                .then(response => response.json())
+                .then(data => {
+                    // Rewrite the <h2> tag with the live count
+                    document.getElementById('counter-display').innerText = data.value || 0;
+                })
+                .catch(error => {
+                    document.getElementById('counter-display').innerText = "Error loading count";
+                });
+
+        } else {
+            // --- USER MODE: COUNT AND REDIRECT ---
+            // 1. Log the hit by incrementing the cloud counter
+            fetch('https://api.counterapi.dev/v1/zealcartbd/qr_counter/up')
+                .then(() => {
+                    // 2. Redirect to Facebook instantly once logged
+                    window.location.href = "https://www.facebook.com/zealcartbd";
+                })
+                .catch(() => {
+                    // Fallback: Redirect even if the counter service drops out
+                    window.location.href = "https://www.facebook.com/zealcartbd";
+                });
+        }
     </script>
-    
-    <!-- Fallback meta redirect if the user has JavaScript disabled completely -->
-    <meta http-equiv="refresh" content="2; url=https://www.facebook.com/zealcartbd" />
-  </head>
-  <body>
-    <p>
-      Redirecting you to Facebook... If you are not redirected automatically, 
-      <a href="https://www.facebook.com/zealcartbd">click here</a>.
-    </p>
-  </body>
+</body>
 </html>
