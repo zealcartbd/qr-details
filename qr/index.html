@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
     <style>
-        /* Hidden by default so regular users don't see a flash */
+        /* Hidden by default so regular users redirecting see a clean screen */
         #stats-box {
             display: none; 
             font-family: Arial, sans-serif;
@@ -20,35 +20,47 @@
 </head>
 <body>
 
-    <!-- Hidden admin panel -->
+    <!-- Hidden admin dashboard container -->
     <div id="stats-box">
         <p>Total QR Code Scans / Lands:</p>
-        <h2 id="counter-display">0</h2>
+        <h2 id="counter-display">Loading...</h2>
     </div>
 
     <script>
-        // Check if the URL has the special stats parameter
+        // Check if the URL has the specific string parameter (e.g. ?stats=true)
         const urlParams = new URLSearchParams(window.location.search);
         const viewStats = urlParams.has('stats');
 
-        // Get the current count from local storage (default to 0 if it doesn't exist yet)
-        let currentCount = parseInt(localStorage.getItem('qr_land_count')) || 0;
+        // A secure, unique key combining your business name and page objective
+        const apiUrl = 'https://abacus.jasoncameron.dev/hit/zealcartbd.com/qr_counter';
 
         if (viewStats) {
-            // --- ADMIN MODE: SHOW STATS ---
+            // --- ADMIN MODE: SHOW CLOUD STATS ---
             document.getElementById('stats-box').style.display = 'block';
             document.title = "Scan Analytics";
             
-            // Write the current total count right into the <h2> tag
-            document.getElementById('counter-display').innerText = currentCount;
+            // Fetch the active total value without adding an extra numeric point
+            // Changing '/hit/' to '/get/' safely views the count without incrementing it
+            fetch(apiUrl.replace('/hit/', '/get/'))
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('counter-display').innerText = data.value || 0;
+                })
+                .catch(error => {
+                    document.getElementById('counter-display').innerText = "Error pulling data";
+                });
         } else {
-            // --- USER MODE: INCREMENT AND REDIRECT ---
-            // 1. Add 1 to the current landing count
-            currentCount += 1;
-            localStorage.setItem('qr_land_count', currentCount);
-
-            // 2. Redirect to Facebook instantly
-            window.location.href = "https://www.facebook.com/zealcartbd";
+            // --- USER MODE: INCREMENT IN CLOUD AND REDIRECT ---
+            // 1. Send the background fetch to register the visitor click globally
+            fetch(apiUrl)
+                .then(() => {
+                    // 2. Redirect to Facebook immediately once logged
+                    window.location.href = "https://www.facebook.com/zealcartbd";
+                })
+                .catch(() => {
+                    // Fallback: If network fluctuates, ensure the user goes to Facebook anyway
+                    window.location.href = "https://www.facebook.com/zealcartbd";
+                });
         }
     </script>
 </body>
