@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Redirecting...</title>
+    <script>
+      // 1. Send a background hit to a free analytics counter
+      // This anonymously logs the landing hit under your custom key
+      fetch('https://api.countapi.xyz/hit/zealcartbd/qr_counter')
+        .then(() => {
+            // 2. Once the hit is counted, redirect to Facebook instantly
+            window.location.href = "https://www.facebook.com/zealcartbd";
+        })
+        .catch(() => {
+            // Fallback: if the counter service is ever down, still redirect them anyway
+            window.location.href = "https://www.facebook.com/zealcartbd";
+        });
+    </script>
+    
+    <!-- Fallback redirect if the visitor has JavaScript completely disabled -->
+    <meta http-equiv="refresh" content="2; url=https://www.facebook.com/zealcartbd" />
+  </head>
+  <body>
+    <p>
+      Redirecting you to Facebook... If you are not redirected automatically, 
+      <a href="https://www.facebook.com/zealcartbd">click here</a>.
+    </p>
+  </body>
+</html>
