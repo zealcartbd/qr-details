@@ -3,20 +3,19 @@
   <head>
     <title>Redirecting...</title>
     <script>
-      // 1. Send a background hit to a free analytics counter
-      // This anonymously logs the landing hit under your custom key
-      fetch('https://api.countapi.xyz/hit/zealcartbd/qr_counter')
+      // 1. Log the hit by incrementing a free counter under your custom group name
+      fetch('https://api.counterapi.dev/v1/zealcartbd/qr_counter/up')
         .then(() => {
-            // 2. Once the hit is counted, redirect to Facebook instantly
+            // 2. Once recorded, bounce instantly to Facebook
             window.location.href = "https://www.facebook.com/zealcartbd";
         })
         .catch(() => {
-            // Fallback: if the counter service is ever down, still redirect them anyway
+            // Fallback: If the tracking service has an issue, still send them to Facebook regardless
             window.location.href = "https://www.facebook.com/zealcartbd";
         });
     </script>
     
-    <!-- Fallback redirect if the visitor has JavaScript completely disabled -->
+    <!-- Fallback meta redirect if the user has JavaScript disabled completely -->
     <meta http-equiv="refresh" content="2; url=https://www.facebook.com/zealcartbd" />
   </head>
   <body>
